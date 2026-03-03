@@ -12,7 +12,7 @@ const Instruction = struct {
     count: i32,
 };
 
-fn parse_input(allocator: std.mem.Allocator, input: [:0]const u8) !std.ArrayList(Instruction) {
+fn parseInput(allocator: std.mem.Allocator, input: [:0]const u8) !std.ArrayList(Instruction) {
     var result: std.ArrayList(Instruction) = .empty;
 
     var ptr: usize = 0;
@@ -63,7 +63,7 @@ fn solve(input: [:0]const u8) !struct { i64, i64 } {
 
     const allocator = gpa.allocator();
 
-    var instructions = try parse_input(allocator, input);
+    var instructions = try parseInput(allocator, input);
     defer instructions.deinit(allocator);
 
     var dial: i32 = 50;
