@@ -18,25 +18,20 @@ fn parseInput(allocator: std.mem.Allocator, input: [:0]const u8) !std.ArrayList(
     var ptr: usize = 0;
 
     while (ptr < input.len) {
-        var direction: TurnDirection = undefined;
-        var count: i32 = 0;
-
-        switch (input[ptr]) {
-            'L' => {
-                direction = .left;
-            },
-            'R' => {
-                direction = .right;
-            },
+        const direction: TurnDirection = switch (input[ptr]) {
+            'L' => .left,
+            'R' => .right,
             else => {
                 std.debug.print("Direction found: {}", .{input[ptr]});
                 @panic("Illegal input: Unknown direction");
             },
-        }
+        };
 
         ptr += 1;
 
-        while (input[ptr] != '\n' and ptr < input.len) {
+        var count: i32 = 0;
+
+        while (ptr < input.len and input[ptr] != '\n') {
             count = count * 10 + (input[ptr] - '0');
             ptr += 1;
         }
