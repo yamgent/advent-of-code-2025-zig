@@ -47,17 +47,7 @@ fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(In
     return result;
 }
 
-fn solve(input: []const u8) !struct { i64, i64 } {
-    var gpa: std.heap.DebugAllocator(.{}) = .init;
-    defer {
-        const deinit_status = gpa.deinit();
-        if (deinit_status == .leak) {
-            @panic("Memory leak");
-        }
-    }
-
-    const allocator = gpa.allocator();
-
+fn solve(allocator: std.mem.Allocator, input: []const u8) !struct { i64, i64 } {
     var instructions = try parseInput(allocator, input);
     defer instructions.deinit(allocator);
 
@@ -97,19 +87,28 @@ fn solve(input: []const u8) !struct { i64, i64 } {
     return .{ zero_count, zero_passed };
 }
 
-fn p1(input: []const u8) !i64 {
-    const sol, _ = try solve(input);
+fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
+    const sol, _ = try solve(allocator, input);
     return sol;
 }
 
-fn p2(input: []const u8) !i64 {
-    _, const sol = try solve(input);
+fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
+    _, const sol = try solve(allocator, input);
     return sol;
 }
 
 pub fn main() !void {
-    std.debug.print("{d}\n", .{try p1(ACTUAL_INPUT)});
-    std.debug.print("{d}\n", .{try p2(ACTUAL_INPUT)});
+    var gpa: std.heap.DebugAllocator(.{}) = .init;
+    defer {
+        const deinit_status = gpa.deinit();
+        if (deinit_status == .leak) {
+            @panic("Memory leak");
+        }
+    }
+    const allocator = gpa.allocator();
+
+    std.debug.print("{d}\n", .{try p1(allocator, ACTUAL_INPUT)});
+    std.debug.print("{d}\n", .{try p2(allocator, ACTUAL_INPUT)});
 }
 
 const SAMPLE_INPUT =
@@ -126,15 +125,18 @@ const SAMPLE_INPUT =
 ;
 
 test "p1 sample" {
-    try std.testing.expectEqual(3, p1(SAMPLE_INPUT));
+    const gpa = std.testing.allocator;
+    try std.testing.expectEqual(3, p1(gpa, SAMPLE_INPUT));
 }
 
 test "p1 actual" {
-    try std.testing.expectEqual(1066, p1(ACTUAL_INPUT));
+    const gpa = std.testing.allocator;
+    try std.testing.expectEqual(1066, p1(gpa, ACTUAL_INPUT));
 }
 
 fn rotateTestCase(input: []const u8, expected: i64) !void {
-    _, const result = try solve(input);
+    const gpa = std.testing.allocator;
+    _, const result = try solve(gpa, input);
     try std.testing.expectEqual(expected, result);
 }
 
@@ -165,9 +167,11 @@ test "p2 rotate" {
 }
 
 test "p2 sample" {
-    try std.testing.expectEqual(6, p2(SAMPLE_INPUT));
+    const gpa = std.testing.allocator;
+    try std.testing.expectEqual(6, p2(gpa, SAMPLE_INPUT));
 }
 
 test "p2 actual" {
-    try std.testing.expectEqual(6223, p2(ACTUAL_INPUT));
+    const gpa = std.testing.allocator;
+    try std.testing.expectEqual(6223, p2(gpa, ACTUAL_INPUT));
 }
