@@ -52,7 +52,7 @@ fn parse_input(allocator: std.mem.Allocator, input: [:0]const u8) !std.ArrayList
     return result;
 }
 
-fn p1(input: [:0]const u8) !i64 {
+fn solve(input: [:0]const u8) !struct { i64, i64 } {
     var gpa: std.heap.DebugAllocator(.{}) = .init;
     defer {
         const deinit_status = gpa.deinit();
@@ -68,14 +68,28 @@ fn p1(input: [:0]const u8) !i64 {
 
     var dial: i32 = 50;
     var zero_count: i64 = 0;
+    var zero_passed: i64 = 0;
 
     for (instructions.items) |instruction| {
+        const previous_dial = dial;
+
         switch (instruction.direction) {
             .left => {
                 dial -= instruction.count;
+
+                if (dial <= 0) {
+                    zero_passed += @divTrunc(-dial, 100);
+                    if (previous_dial != 0) {
+                        zero_passed += 1;
+                    }
+                }
             },
             .right => {
                 dial += instruction.count;
+
+                if (dial >= 100) {
+                    zero_passed += @divTrunc(dial - 100, 100) + 1;
+                }
             },
         }
 
@@ -85,17 +99,22 @@ fn p1(input: [:0]const u8) !i64 {
         }
     }
 
-    return zero_count;
+    return .{ zero_count, zero_passed };
 }
 
-fn p2(input: [:0]const u8) i64 {
-    _ = input;
-    return 2;
+fn p1(input: [:0]const u8) !i64 {
+    const sol, _ = try solve(input);
+    return sol;
+}
+
+fn p2(input: [:0]const u8) !i64 {
+    _, const sol = try solve(input);
+    return sol;
 }
 
 pub fn main() !void {
     std.debug.print("{d}\n", .{try p1(ACTUAL_INPUT)});
-    std.debug.print("{d}\n", .{p2(ACTUAL_INPUT)});
+    std.debug.print("{d}\n", .{try p2(ACTUAL_INPUT)});
 }
 
 const SAMPLE_INPUT =
@@ -119,10 +138,41 @@ test "p1 actual" {
     try std.testing.expectEqual(1066, p1(ACTUAL_INPUT));
 }
 
+fn rotateTestCase(input: [:0]const u8, expected: i64) !void {
+    _, const result = try solve(input);
+    try std.testing.expectEqual(expected, result);
+}
+
+test "p2 rotate" {
+    try rotateTestCase("L49", 0);
+    try rotateTestCase("L50", 1);
+    try rotateTestCase("L149", 1);
+    try rotateTestCase("L150", 2);
+    try rotateTestCase("L151", 2);
+    try rotateTestCase("L249", 2);
+    try rotateTestCase("L250", 3);
+    try rotateTestCase("L251", 3);
+
+    try rotateTestCase("L50\nR99", 1);
+    try rotateTestCase("L50\nR100", 2);
+    try rotateTestCase("L50\nR101", 2);
+    try rotateTestCase("L50\nR199", 2);
+    try rotateTestCase("L50\nR200", 3);
+    try rotateTestCase("L50\nR201", 3);
+
+    try rotateTestCase("L50\nL1", 1);
+    try rotateTestCase("L50\nL99", 1);
+    try rotateTestCase("L50\nL100", 2);
+    try rotateTestCase("L50\nL101", 2);
+    try rotateTestCase("L50\nL199", 2);
+    try rotateTestCase("L50\nL200", 3);
+    try rotateTestCase("L50\nL201", 3);
+}
+
 test "p2 sample" {
-    try std.testing.expectEqual(2, p2(SAMPLE_INPUT));
+    try std.testing.expectEqual(6, p2(SAMPLE_INPUT));
 }
 
 test "p2 actual" {
-    try std.testing.expectEqual(2, p2(ACTUAL_INPUT));
+    try std.testing.expectEqual(6223, p2(ACTUAL_INPUT));
 }
