@@ -47,7 +47,12 @@ fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(In
     return result;
 }
 
-fn solve(allocator: std.mem.Allocator, input: []const u8) !struct { i64, i64 } {
+const SolveResult = struct {
+    p1: i64,
+    p2: i64,
+};
+
+fn solve(allocator: std.mem.Allocator, input: []const u8) !SolveResult {
     var instructions = try parseInput(allocator, input);
     defer instructions.deinit(allocator);
 
@@ -84,17 +89,15 @@ fn solve(allocator: std.mem.Allocator, input: []const u8) !struct { i64, i64 } {
         }
     }
 
-    return .{ zero_count, zero_passed };
+    return .{ .p1 = zero_count, .p2 = zero_passed };
 }
 
 fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    const sol, _ = try solve(allocator, input);
-    return sol;
+    return (try solve(allocator, input)).p1;
 }
 
 fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    _, const sol = try solve(allocator, input);
-    return sol;
+    return (try solve(allocator, input)).p2;
 }
 
 pub fn main() !void {
@@ -136,7 +139,7 @@ test "p1 actual" {
 
 fn rotateTestCase(input: []const u8, expected: i64) !void {
     const gpa = std.testing.allocator;
-    _, const result = try solve(gpa, input);
+    const result = (try solve(gpa, input)).p2;
     try std.testing.expectEqual(expected, result);
 }
 
