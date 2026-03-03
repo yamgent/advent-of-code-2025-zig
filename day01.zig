@@ -101,7 +101,7 @@ fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
 
 pub fn main() !void {
-    const gpa, const is_debug = gpa: {
+    const allocator, const is_debug = gpa: {
         if (builtin.os.tag == .wasi) break :gpa .{ std.heap.wasm_allocator, false };
         break :gpa switch (builtin.mode) {
             .Debug, .ReleaseSafe => .{ debug_allocator.allocator(), true },
@@ -115,8 +115,8 @@ pub fn main() !void {
         }
     };
 
-    std.debug.print("{d}\n", .{try p1(gpa, ACTUAL_INPUT)});
-    std.debug.print("{d}\n", .{try p2(gpa, ACTUAL_INPUT)});
+    std.debug.print("{d}\n", .{try p1(allocator, ACTUAL_INPUT)});
+    std.debug.print("{d}\n", .{try p2(allocator, ACTUAL_INPUT)});
 }
 
 const SAMPLE_INPUT =
