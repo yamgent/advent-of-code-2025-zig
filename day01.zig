@@ -21,10 +21,7 @@ fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(In
         const direction: TurnDirection = switch (input[ptr]) {
             'L' => .left,
             'R' => .right,
-            else => {
-                std.debug.print("Direction found: {}", .{input[ptr]});
-                @panic("Illegal input: Unknown direction");
-            },
+            else => |c| std.debug.panic("Illegal input: Unknown direction {c}", .{c}),
         };
 
         ptr += 1;
