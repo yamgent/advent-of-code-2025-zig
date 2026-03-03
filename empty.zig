@@ -2,12 +2,12 @@ const std = @import("std");
 
 const ACTUAL_INPUT = @embedFile("./actual_inputs/2025/01/input.txt");
 
-fn p1(input: [:0]const u8) i64 {
+fn p1(input: []const u8) i64 {
     _ = input;
     return 1;
 }
 
-fn p2(input: [:0]const u8) i64 {
+fn p2(input: []const u8) i64 {
     _ = input;
     return 2;
 }
