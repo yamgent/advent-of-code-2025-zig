@@ -40,10 +40,11 @@ fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(Ra
 
 fn digitize(number: usize, buf: []u8) std.ArrayList(u8) {
     // this allow us to remove the error return type for
-    // this function, since we will never need more than 24 elements
+    // this function, since we will never need more than 20 elements
+    // (a 64-bit number can never exceed 20 digits),
     // so we should never run out of space (and therefore we don't
     // need to do `try result.appendBounded()`)
-    std.debug.assert(buf.len >= 24);
+    std.debug.assert(buf.len >= 20);
 
     var result = std.ArrayList(u8).initBuffer(buf);
 
@@ -53,7 +54,7 @@ fn digitize(number: usize, buf: []u8) std.ArrayList(u8) {
         process = @divTrunc(process, 10);
 
         // we used this instead of `result.appendBounded()` because we know
-        // that this should at least be of size 24
+        // that this should at least be of size 20
         result.appendAssumeCapacity(digit);
     }
 
@@ -72,7 +73,7 @@ fn checkValidityPart1(number: usize) IdValidityResult {
         return .valid;
     }
 
-    var buffer: [24]u8 = undefined;
+    var buffer: [20]u8 = undefined;
 
     const digits = digitize(number, &buffer);
 
@@ -92,7 +93,7 @@ fn checkValidityPart1(number: usize) IdValidityResult {
 }
 
 fn checkValidityPart2(number: usize) IdValidityResult {
-    var buffer: [24]u8 = undefined;
+    var buffer: [20]u8 = undefined;
 
     const digits = digitize(number, &buffer);
 
@@ -189,21 +190,16 @@ test "parses input" {
 }
 
 test "digitize" {
-    const gpa = std.testing.allocator;
+    var expected_buffer: [20]u8 = undefined;
+    var expected = std.ArrayList(u8).initBuffer(&expected_buffer);
+    expected.appendAssumeCapacity(1);
+    expected.appendAssumeCapacity(2);
+    expected.appendAssumeCapacity(3);
 
-    var expected: std.ArrayList(u8) = .empty;
-    defer expected.deinit(gpa);
-    try expected.append(gpa, 1);
-    try expected.append(gpa, 2);
-    try expected.append(gpa, 3);
-
-    var buffer: [24]u8 = undefined;
+    var buffer: [20]u8 = undefined;
     const actual = digitize(123, &buffer);
 
-    try std.testing.expectEqual(expected.items.len, actual.items.len);
-    for (0..expected.items.len) |i| {
-        try std.testing.expectEqual(expected.items[i], actual.items[i]);
-    }
+    try std.testing.expectEqualDeep(expected, actual);
 }
 
 test "invalid for part 1" {
