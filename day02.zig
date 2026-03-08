@@ -34,32 +34,26 @@ fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(Ra
     return result;
 }
 
-fn digitize(allocator: std.mem.Allocator, number: i64) !std.ArrayList(i8) {
-    var reverse_buffer: [24]i8 = undefined;
-    var reverse = std.ArrayList(i8).initBuffer(&reverse_buffer);
+fn digitize(number: i64, buf: []u8) !std.ArrayList(u8) {
+    var result = std.ArrayList(u8).initBuffer(buf);
 
     var process = number;
     while (process > 0) {
-        const digit: i8 = @intCast(@rem(process, 10));
+        const digit: u8 = @intCast(@rem(process, 10));
         process = @divTrunc(process, 10);
 
-        try reverse.appendBounded(digit);
+        try result.appendBounded(digit);
     }
 
-    var result: std.ArrayList(i8) = .empty;
-    while (reverse.items.len > 0) {
-        try result.append(allocator, reverse.pop().?);
-    }
+    std.mem.reverse(u8, result.items);
 
     return result;
 }
 
 fn isInvalidPart1(number: i64) !bool {
-    var buffer: [256]u8 = undefined;
-    var gpa = std.heap.FixedBufferAllocator.init(&buffer);
-    const buffer_allocator = gpa.allocator();
+    var buffer: [24]u8 = undefined;
 
-    const digits = try digitize(buffer_allocator, number);
+    const digits = try digitize(number, &buffer);
 
     if (@rem(digits.items.len, 2) == 1) {
         return false;
@@ -147,16 +141,19 @@ test "parses input" {
 test "digitize" {
     const gpa = std.testing.allocator;
 
-    var expected: std.ArrayList(i8) = .empty;
+    var expected: std.ArrayList(u8) = .empty;
     defer expected.deinit(gpa);
     try expected.append(gpa, 1);
     try expected.append(gpa, 2);
     try expected.append(gpa, 3);
 
-    var actual = try digitize(gpa, 123);
-    defer actual.deinit(gpa);
+    var buffer: [24]u8 = undefined;
+    const actual = try digitize(123, &buffer);
 
-    try std.testing.expectEqualDeep(expected, actual);
+    try std.testing.expectEqual(expected.items.len, actual.items.len);
+    for (0..expected.items.len) |i| {
+        try std.testing.expectEqual(expected.items[i], actual.items[i]);
+    }
 }
 
 test "invalid for part 1" {
