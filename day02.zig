@@ -54,9 +54,14 @@ fn digitize(number: usize, buf: []u8) !std.ArrayList(u8) {
     return result;
 }
 
-fn isInvalidPart1(number: usize) !bool {
+const IdValidityResult = enum {
+    valid,
+    invalid,
+};
+
+fn checkValidityPart1(number: usize) !IdValidityResult {
     if (number == 0) {
-        return false;
+        return .valid;
     }
 
     var buffer: [24]u8 = undefined;
@@ -64,21 +69,21 @@ fn isInvalidPart1(number: usize) !bool {
     const digits = try digitize(number, &buffer);
 
     if (@rem(digits.items.len, 2) == 1) {
-        return false;
+        return .valid;
     }
 
     const half = @divExact(digits.items.len, 2);
 
     for (0..half) |i| {
         if (digits.items[i] != digits.items[i + half]) {
-            return false;
+            return .valid;
         }
     }
 
-    return true;
+    return .invalid;
 }
 
-fn isInvalidPart2(number: usize) !bool {
+fn checkValidityPart2(number: usize) !IdValidityResult {
     var buffer: [24]u8 = undefined;
 
     const digits = try digitize(number, &buffer);
@@ -93,7 +98,7 @@ fn isInvalidPart2(number: usize) !bool {
         for (0..digits.items.len) |i| {
             if (i + window_size >= digits.items.len) {
                 // found a window size that makes the ID invalid
-                return true;
+                return .invalid;
             }
 
             if (digits.items[i] != digits.items[i + window_size]) {
@@ -103,10 +108,10 @@ fn isInvalidPart2(number: usize) !bool {
         }
     }
 
-    return false;
+    return .valid;
 }
 
-fn solve(allocator: std.mem.Allocator, input: []const u8, idTester: *const fn (number: usize) anyerror!bool) !usize {
+fn solve(allocator: std.mem.Allocator, input: []const u8, idChecker: *const fn (number: usize) anyerror!IdValidityResult) !usize {
     var ranges = try parseInput(allocator, input);
     defer ranges.deinit(allocator);
 
@@ -114,7 +119,8 @@ fn solve(allocator: std.mem.Allocator, input: []const u8, idTester: *const fn (n
 
     for (ranges.items) |range| {
         for (range.start..(range.end + 1)) |id| {
-            if (try idTester(id)) {
+            const id_test_result = try idChecker(id);
+            if (id_test_result == .invalid) {
                 result += id;
             }
         }
@@ -124,11 +130,11 @@ fn solve(allocator: std.mem.Allocator, input: []const u8, idTester: *const fn (n
 }
 
 fn p1(allocator: std.mem.Allocator, input: []const u8) !usize {
-    return try solve(allocator, input, isInvalidPart1);
+    return try solve(allocator, input, checkValidityPart1);
 }
 
 fn p2(allocator: std.mem.Allocator, input: []const u8) !usize {
-    return try solve(allocator, input, isInvalidPart2);
+    return try solve(allocator, input, checkValidityPart2);
 }
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
@@ -193,39 +199,39 @@ test "digitize" {
 }
 
 test "invalid for part 1" {
-    try std.testing.expectEqual(false, isInvalidPart1(0));
+    try std.testing.expectEqual(.valid, checkValidityPart1(0));
 
-    try std.testing.expectEqual(false, isInvalidPart1(1));
-    try std.testing.expectEqual(false, isInvalidPart1(5));
-    try std.testing.expectEqual(false, isInvalidPart1(9));
-    try std.testing.expectEqual(false, isInvalidPart1(10));
-    try std.testing.expectEqual(false, isInvalidPart1(12));
-    try std.testing.expectEqual(false, isInvalidPart1(121));
-    try std.testing.expectEqual(false, isInvalidPart1(121212));
+    try std.testing.expectEqual(.valid, checkValidityPart1(1));
+    try std.testing.expectEqual(.valid, checkValidityPart1(5));
+    try std.testing.expectEqual(.valid, checkValidityPart1(9));
+    try std.testing.expectEqual(.valid, checkValidityPart1(10));
+    try std.testing.expectEqual(.valid, checkValidityPart1(12));
+    try std.testing.expectEqual(.valid, checkValidityPart1(121));
+    try std.testing.expectEqual(.valid, checkValidityPart1(121212));
 
-    try std.testing.expectEqual(true, isInvalidPart1(11));
-    try std.testing.expectEqual(true, isInvalidPart1(22));
-    try std.testing.expectEqual(true, isInvalidPart1(1212));
-    try std.testing.expectEqual(true, isInvalidPart1(123123));
+    try std.testing.expectEqual(.invalid, checkValidityPart1(11));
+    try std.testing.expectEqual(.invalid, checkValidityPart1(22));
+    try std.testing.expectEqual(.invalid, checkValidityPart1(1212));
+    try std.testing.expectEqual(.invalid, checkValidityPart1(123123));
 }
 
 test "invalid for part 2" {
-    try std.testing.expectEqual(false, isInvalidPart2(0));
+    try std.testing.expectEqual(.valid, checkValidityPart2(0));
 
-    try std.testing.expectEqual(false, isInvalidPart2(1));
-    try std.testing.expectEqual(false, isInvalidPart2(5));
-    try std.testing.expectEqual(false, isInvalidPart2(9));
-    try std.testing.expectEqual(false, isInvalidPart2(10));
-    try std.testing.expectEqual(false, isInvalidPart2(12));
-    try std.testing.expectEqual(false, isInvalidPart2(121));
+    try std.testing.expectEqual(.valid, checkValidityPart2(1));
+    try std.testing.expectEqual(.valid, checkValidityPart2(5));
+    try std.testing.expectEqual(.valid, checkValidityPart2(9));
+    try std.testing.expectEqual(.valid, checkValidityPart2(10));
+    try std.testing.expectEqual(.valid, checkValidityPart2(12));
+    try std.testing.expectEqual(.valid, checkValidityPart2(121));
 
-    try std.testing.expectEqual(true, isInvalidPart2(11));
-    try std.testing.expectEqual(true, isInvalidPart2(22));
-    try std.testing.expectEqual(true, isInvalidPart2(1212));
-    try std.testing.expectEqual(true, isInvalidPart2(123123));
+    try std.testing.expectEqual(.invalid, checkValidityPart2(11));
+    try std.testing.expectEqual(.invalid, checkValidityPart2(22));
+    try std.testing.expectEqual(.invalid, checkValidityPart2(1212));
+    try std.testing.expectEqual(.invalid, checkValidityPart2(123123));
 
-    try std.testing.expectEqual(true, isInvalidPart2(121212));
-    try std.testing.expectEqual(true, isInvalidPart2(123123123));
+    try std.testing.expectEqual(.invalid, checkValidityPart2(121212));
+    try std.testing.expectEqual(.invalid, checkValidityPart2(123123123));
 }
 
 test "p1 sample" {
