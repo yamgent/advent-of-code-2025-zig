@@ -51,6 +51,10 @@ fn digitize(number: i64, buf: []u8) !std.ArrayList(u8) {
 }
 
 fn isInvalidPart1(number: i64) !bool {
+    if (number == 0) {
+        return false;
+    }
+
     var buffer: [24]u8 = undefined;
 
     const digits = try digitize(number, &buffer);
@@ -198,8 +202,7 @@ test "digitize" {
 }
 
 test "invalid for part 1" {
-    // TODO: This is just wrong?
-    try std.testing.expectEqual(true, isInvalidPart1(0));
+    try std.testing.expectEqual(false, isInvalidPart1(0));
 
     try std.testing.expectEqual(false, isInvalidPart1(1));
     try std.testing.expectEqual(false, isInvalidPart1(5));
