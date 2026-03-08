@@ -4,8 +4,12 @@ const std = @import("std");
 const actual_input = @embedFile("./actual_inputs/2025/02/input.txt");
 
 const Range = struct {
-    start: i64,
-    end: i64,
+    start: usize,
+    end: usize,
+};
+
+const ParseInputError = error{
+    IllegalInput,
 };
 
 const common_whitespaces = " \n\t\r";
@@ -19,11 +23,11 @@ fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(Ra
     while (entries.next()) |entry| {
         var values = std.mem.splitScalar(u8, entry, '-');
 
-        const start_str = values.next().?;
-        const end_str = values.next().?;
+        const start_str = values.next() orelse return ParseInputError.IllegalInput;
+        const end_str = values.next() orelse return ParseInputError.IllegalInput;
 
-        const start = try std.fmt.parseInt(i64, start_str, 10);
-        const end = try std.fmt.parseInt(i64, end_str, 10);
+        const start = try std.fmt.parseInt(usize, start_str, 10);
+        const end = try std.fmt.parseInt(usize, end_str, 10);
 
         try result.append(allocator, Range{
             .start = start,
@@ -34,7 +38,7 @@ fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(Ra
     return result;
 }
 
-fn digitize(number: i64, buf: []u8) !std.ArrayList(u8) {
+fn digitize(number: usize, buf: []u8) !std.ArrayList(u8) {
     var result = std.ArrayList(u8).initBuffer(buf);
 
     var process = number;
@@ -50,7 +54,7 @@ fn digitize(number: i64, buf: []u8) !std.ArrayList(u8) {
     return result;
 }
 
-fn isInvalidPart1(number: i64) !bool {
+fn isInvalidPart1(number: usize) !bool {
     if (number == 0) {
         return false;
     }
@@ -74,7 +78,7 @@ fn isInvalidPart1(number: i64) !bool {
     return true;
 }
 
-fn isInvalidPart2(number: i64) !bool {
+fn isInvalidPart2(number: usize) !bool {
     var buffer: [24]u8 = undefined;
 
     const digits = try digitize(number, &buffer);
@@ -102,18 +106,16 @@ fn isInvalidPart2(number: i64) !bool {
     return false;
 }
 
-fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
+fn p1(allocator: std.mem.Allocator, input: []const u8) !usize {
     var ranges = try parseInput(allocator, input);
     defer ranges.deinit(allocator);
 
-    var result: i64 = 0;
+    var result: usize = 0;
 
     for (ranges.items) |range| {
-        const start: usize = @intCast(range.start);
-        const end: usize = @intCast(range.end);
-        for (start..(end + 1)) |id| {
-            if (try isInvalidPart1(@intCast(id))) {
-                result += @intCast(id);
+        for (range.start..(range.end + 1)) |id| {
+            if (try isInvalidPart1(id)) {
+                result += id;
             }
         }
     }
@@ -121,18 +123,16 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
     return result;
 }
 
-fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
+fn p2(allocator: std.mem.Allocator, input: []const u8) !usize {
     var ranges = try parseInput(allocator, input);
     defer ranges.deinit(allocator);
 
-    var result: i64 = 0;
+    var result: usize = 0;
 
     for (ranges.items) |range| {
-        const start: usize = @intCast(range.start);
-        const end: usize = @intCast(range.end);
-        for (start..(end + 1)) |id| {
-            if (try isInvalidPart2(@intCast(id))) {
-                result += @intCast(id);
+        for (range.start..(range.end + 1)) |id| {
+            if (try isInvalidPart2(id)) {
+                result += id;
             }
         }
     }
