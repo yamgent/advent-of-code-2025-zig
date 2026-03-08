@@ -106,7 +106,7 @@ fn isInvalidPart2(number: usize) !bool {
     return false;
 }
 
-fn p1(allocator: std.mem.Allocator, input: []const u8) !usize {
+fn solve(allocator: std.mem.Allocator, input: []const u8, idTester: *const fn (number: usize) anyerror!bool) !usize {
     var ranges = try parseInput(allocator, input);
     defer ranges.deinit(allocator);
 
@@ -114,7 +114,7 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !usize {
 
     for (ranges.items) |range| {
         for (range.start..(range.end + 1)) |id| {
-            if (try isInvalidPart1(id)) {
+            if (try idTester(id)) {
                 result += id;
             }
         }
@@ -123,21 +123,12 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !usize {
     return result;
 }
 
+fn p1(allocator: std.mem.Allocator, input: []const u8) !usize {
+    return try solve(allocator, input, isInvalidPart1);
+}
+
 fn p2(allocator: std.mem.Allocator, input: []const u8) !usize {
-    var ranges = try parseInput(allocator, input);
-    defer ranges.deinit(allocator);
-
-    var result: usize = 0;
-
-    for (ranges.items) |range| {
-        for (range.start..(range.end + 1)) |id| {
-            if (try isInvalidPart2(id)) {
-                result += id;
-            }
-        }
-    }
-
-    return result;
+    return try solve(allocator, input, isInvalidPart2);
 }
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
