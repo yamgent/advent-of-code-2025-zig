@@ -1,7 +1,7 @@
 const builtin = @import("builtin");
 const std = @import("std");
 
-const ACTUAL_INPUT = @embedFile("./actual_inputs/2025/01/input.txt");
+const actual_input = @embedFile("./actual_inputs/2025/01/input.txt");
 
 const TurnDirection = enum {
     left,
@@ -115,11 +115,11 @@ pub fn main() !void {
         }
     };
 
-    std.debug.print("{d}\n", .{try p1(allocator, ACTUAL_INPUT)});
-    std.debug.print("{d}\n", .{try p2(allocator, ACTUAL_INPUT)});
+    std.debug.print("{d}\n", .{try p1(allocator, actual_input)});
+    std.debug.print("{d}\n", .{try p2(allocator, actual_input)});
 }
 
-const SAMPLE_INPUT =
+const sample_input =
     \\L68
     \\L30
     \\R48
@@ -134,12 +134,12 @@ const SAMPLE_INPUT =
 
 test "p1 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(3, p1(gpa, SAMPLE_INPUT));
+    try std.testing.expectEqual(3, p1(gpa, sample_input));
 }
 
 test "p1 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(1066, p1(gpa, ACTUAL_INPUT));
+    try std.testing.expectEqual(1066, p1(gpa, actual_input));
 }
 
 fn rotateTestCase(input: []const u8, expected: i64) !void {
@@ -176,10 +176,10 @@ test "p2 rotate" {
 
 test "p2 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(6, p2(gpa, SAMPLE_INPUT));
+    try std.testing.expectEqual(6, p2(gpa, sample_input));
 }
 
 test "p2 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(6223, p2(gpa, ACTUAL_INPUT));
+    try std.testing.expectEqual(6223, p2(gpa, actual_input));
 }

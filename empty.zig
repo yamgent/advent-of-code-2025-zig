@@ -1,7 +1,7 @@
 const builtin = @import("builtin");
 const std = @import("std");
 
-const ACTUAL_INPUT = @embedFile("./actual_inputs/2025/01/input.txt");
+const actual_input = @embedFile("./actual_inputs/2025/01/input.txt");
 
 fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
     _ = allocator;
@@ -32,28 +32,28 @@ pub fn main() !void {
         }
     };
 
-    std.debug.print("{d}\n", .{try p1(allocator, ACTUAL_INPUT)});
-    std.debug.print("{d}\n", .{try p2(allocator, ACTUAL_INPUT)});
+    std.debug.print("{d}\n", .{try p1(allocator, actual_input)});
+    std.debug.print("{d}\n", .{try p2(allocator, actual_input)});
 }
 
-const SAMPLE_INPUT = "";
+const sample_input = "";
 
 test "p1 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(1, try p1(gpa, SAMPLE_INPUT));
+    try std.testing.expectEqual(1, try p1(gpa, sample_input));
 }
 
 test "p1 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(1, try p1(gpa, ACTUAL_INPUT));
+    try std.testing.expectEqual(1, try p1(gpa, actual_input));
 }
 
 test "p2 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, SAMPLE_INPUT));
+    try std.testing.expectEqual(2, try p2(gpa, sample_input));
 }
 
 test "p2 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, ACTUAL_INPUT));
+    try std.testing.expectEqual(2, try p2(gpa, actual_input));
 }

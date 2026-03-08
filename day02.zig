@@ -1,19 +1,19 @@
 const builtin = @import("builtin");
 const std = @import("std");
 
-const ACTUAL_INPUT = @embedFile("./actual_inputs/2025/02/input.txt");
+const actual_input = @embedFile("./actual_inputs/2025/02/input.txt");
 
 const Range = struct {
     start: i64,
     end: i64,
 };
 
-const COMMON_WHITESPACES = " \n\t\r";
+const common_whitespaces = " \n\t\r";
 
 fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(Range) {
     var result: std.ArrayList(Range) = .empty;
 
-    const trimmed_input = std.mem.trim(u8, input, COMMON_WHITESPACES);
+    const trimmed_input = std.mem.trim(u8, input, common_whitespaces);
     var entries = std.mem.splitScalar(u8, trimmed_input, ',');
 
     while (entries.next()) |entry| {
@@ -153,11 +153,11 @@ pub fn main() !void {
         }
     };
 
-    std.debug.print("{d}\n", .{try p1(allocator, ACTUAL_INPUT)});
-    std.debug.print("{d}\n", .{try p2(allocator, ACTUAL_INPUT)});
+    std.debug.print("{d}\n", .{try p1(allocator, actual_input)});
+    std.debug.print("{d}\n", .{try p2(allocator, actual_input)});
 }
 
-const SAMPLE_INPUT = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124";
+const sample_input = "11-22,95-115,998-1012,1188511880-1188511890,222220-222224,1698522-1698528,446443-446449,38593856-38593862,565653-565659,824824821-824824827,2121212118-2121212124";
 
 test "parses input" {
     const gpa = std.testing.allocator;
@@ -236,20 +236,20 @@ test "invalid for part 2" {
 
 test "p1 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(1227775554, try p1(gpa, SAMPLE_INPUT));
+    try std.testing.expectEqual(1227775554, try p1(gpa, sample_input));
 }
 
 test "p1 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(15873079081, try p1(gpa, ACTUAL_INPUT));
+    try std.testing.expectEqual(15873079081, try p1(gpa, actual_input));
 }
 
 test "p2 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(4174379265, try p2(gpa, SAMPLE_INPUT));
+    try std.testing.expectEqual(4174379265, try p2(gpa, sample_input));
 }
 
 test "p2 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(22617871034, try p2(gpa, ACTUAL_INPUT));
+    try std.testing.expectEqual(22617871034, try p2(gpa, actual_input));
 }
