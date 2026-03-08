@@ -70,6 +70,34 @@ fn isInvalidPart1(number: i64) !bool {
     return true;
 }
 
+fn isInvalidPart2(number: i64) !bool {
+    var buffer: [24]u8 = undefined;
+
+    const digits = try digitize(number, &buffer);
+
+    const half = @divFloor(digits.items.len, 2);
+
+    for (1..(half + 1)) |window_size| {
+        if (@rem(digits.items.len, window_size) != 0) {
+            continue;
+        }
+
+        for (0..digits.items.len) |i| {
+            if (i + window_size >= digits.items.len) {
+                // found a window size that makes the ID invalid
+                return true;
+            }
+
+            if (digits.items[i] != digits.items[i + window_size]) {
+                // not a candidate, try next
+                break;
+            }
+        }
+    }
+
+    return false;
+}
+
 fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
     var ranges = try parseInput(allocator, input);
     defer ranges.deinit(allocator);
@@ -90,9 +118,22 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
 }
 
 fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    _ = allocator;
-    _ = input;
-    return 2;
+    var ranges = try parseInput(allocator, input);
+    defer ranges.deinit(allocator);
+
+    var result: i64 = 0;
+
+    for (ranges.items) |range| {
+        const start: usize = @intCast(range.start);
+        const end: usize = @intCast(range.end);
+        for (start..(end + 1)) |id| {
+            if (try isInvalidPart2(@intCast(id))) {
+                result += @intCast(id);
+            }
+        }
+    }
+
+    return result;
 }
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
@@ -157,6 +198,7 @@ test "digitize" {
 }
 
 test "invalid for part 1" {
+    // TODO: This is just wrong?
     try std.testing.expectEqual(true, isInvalidPart1(0));
 
     try std.testing.expectEqual(false, isInvalidPart1(1));
@@ -173,6 +215,25 @@ test "invalid for part 1" {
     try std.testing.expectEqual(true, isInvalidPart1(123123));
 }
 
+test "invalid for part 2" {
+    try std.testing.expectEqual(false, isInvalidPart2(0));
+
+    try std.testing.expectEqual(false, isInvalidPart2(1));
+    try std.testing.expectEqual(false, isInvalidPart2(5));
+    try std.testing.expectEqual(false, isInvalidPart2(9));
+    try std.testing.expectEqual(false, isInvalidPart2(10));
+    try std.testing.expectEqual(false, isInvalidPart2(12));
+    try std.testing.expectEqual(false, isInvalidPart2(121));
+
+    try std.testing.expectEqual(true, isInvalidPart2(11));
+    try std.testing.expectEqual(true, isInvalidPart2(22));
+    try std.testing.expectEqual(true, isInvalidPart2(1212));
+    try std.testing.expectEqual(true, isInvalidPart2(123123));
+
+    try std.testing.expectEqual(true, isInvalidPart2(121212));
+    try std.testing.expectEqual(true, isInvalidPart2(123123123));
+}
+
 test "p1 sample" {
     const gpa = std.testing.allocator;
     try std.testing.expectEqual(1227775554, try p1(gpa, SAMPLE_INPUT));
@@ -185,10 +246,10 @@ test "p1 actual" {
 
 test "p2 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, SAMPLE_INPUT));
+    try std.testing.expectEqual(4174379265, try p2(gpa, SAMPLE_INPUT));
 }
 
 test "p2 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, ACTUAL_INPUT));
+    try std.testing.expectEqual(22617871034, try p2(gpa, ACTUAL_INPUT));
 }
