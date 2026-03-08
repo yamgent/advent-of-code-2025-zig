@@ -38,7 +38,13 @@ fn parseInput(allocator: std.mem.Allocator, input: []const u8) !std.ArrayList(Ra
     return result;
 }
 
-fn digitize(number: usize, buf: []u8) !std.ArrayList(u8) {
+fn digitize(number: usize, buf: []u8) std.ArrayList(u8) {
+    // this allow us to remove the error return type for
+    // this function, since we will never need more than 24 elements
+    // so we should never run out of space (and therefore we don't
+    // need to do `try result.appendBounded()`)
+    std.debug.assert(buf.len >= 24);
+
     var result = std.ArrayList(u8).initBuffer(buf);
 
     var process = number;
@@ -46,7 +52,9 @@ fn digitize(number: usize, buf: []u8) !std.ArrayList(u8) {
         const digit: u8 = @intCast(@rem(process, 10));
         process = @divTrunc(process, 10);
 
-        try result.appendBounded(digit);
+        // we used this instead of `result.appendBounded()` because we know
+        // that this should at least be of size 24
+        result.appendAssumeCapacity(digit);
     }
 
     std.mem.reverse(u8, result.items);
@@ -59,14 +67,14 @@ const IdValidityResult = enum {
     invalid,
 };
 
-fn checkValidityPart1(number: usize) !IdValidityResult {
+fn checkValidityPart1(number: usize) IdValidityResult {
     if (number == 0) {
         return .valid;
     }
 
     var buffer: [24]u8 = undefined;
 
-    const digits = try digitize(number, &buffer);
+    const digits = digitize(number, &buffer);
 
     if (@rem(digits.items.len, 2) == 1) {
         return .valid;
@@ -83,10 +91,10 @@ fn checkValidityPart1(number: usize) !IdValidityResult {
     return .invalid;
 }
 
-fn checkValidityPart2(number: usize) !IdValidityResult {
+fn checkValidityPart2(number: usize) IdValidityResult {
     var buffer: [24]u8 = undefined;
 
-    const digits = try digitize(number, &buffer);
+    const digits = digitize(number, &buffer);
 
     const half = @divFloor(digits.items.len, 2);
 
@@ -111,7 +119,7 @@ fn checkValidityPart2(number: usize) !IdValidityResult {
     return .valid;
 }
 
-fn solve(allocator: std.mem.Allocator, input: []const u8, idChecker: *const fn (number: usize) anyerror!IdValidityResult) !usize {
+fn solve(allocator: std.mem.Allocator, input: []const u8, idChecker: *const fn (number: usize) IdValidityResult) !usize {
     var ranges = try parseInput(allocator, input);
     defer ranges.deinit(allocator);
 
@@ -119,7 +127,7 @@ fn solve(allocator: std.mem.Allocator, input: []const u8, idChecker: *const fn (
 
     for (ranges.items) |range| {
         for (range.start..(range.end + 1)) |id| {
-            const id_test_result = try idChecker(id);
+            const id_test_result = idChecker(id);
             if (id_test_result == .invalid) {
                 result += id;
             }
@@ -190,7 +198,7 @@ test "digitize" {
     try expected.append(gpa, 3);
 
     var buffer: [24]u8 = undefined;
-    const actual = try digitize(123, &buffer);
+    const actual = digitize(123, &buffer);
 
     try std.testing.expectEqual(expected.items.len, actual.items.len);
     for (0..expected.items.len) |i| {
