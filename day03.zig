@@ -45,10 +45,62 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
     return result;
 }
 
+fn solveSinglePart2(line: []const u8) i64 {
+    // this implementation is inspired by the Odin's version, which itself is inspired by the Rust's version
+    const buffer_size = 100;
+    std.debug.assert(line.len <= buffer_size);
+
+    var digits_reversed = [_]i64{0} ** buffer_size;
+
+    for (0..line.len) |i| {
+        digits_reversed[i] = line[line.len - 1 - i] - '0';
+    }
+
+    var current_max_so_far = [_]i64{0} ** buffer_size;
+    var next_max_so_far = [_]i64{0} ** buffer_size;
+
+    // group size = 1
+    current_max_so_far[0] = digits_reversed[0];
+    for (1..digits_reversed.len) |i| {
+        current_max_so_far[i] = @max(current_max_so_far[i - 1], digits_reversed[i]);
+    }
+
+    // group size = s
+    const total_size = 12;
+    for (2..(total_size + 1)) |s| {
+        var acc: i64 = 0;
+        for (0..s) |i| {
+            acc += digits_reversed[i] * std.math.pow(i64, 10, @intCast(i));
+        }
+
+        next_max_so_far[0] = acc;
+
+        for (s..digits_reversed.len) |i| {
+            const candidate = digits_reversed[i] * std.math.pow(i64, 10, @intCast(s - 1)) + current_max_so_far[i - s + 1];
+
+            next_max_so_far[i - s + 1] = @max(candidate, next_max_so_far[i - s]);
+        }
+
+        const temp = next_max_so_far;
+        next_max_so_far = current_max_so_far;
+        current_max_so_far = temp;
+    }
+
+    const answer = current_max_so_far[digits_reversed.len - total_size];
+    return answer;
+}
+
 fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
     _ = allocator;
-    _ = input;
-    return 2;
+
+    var lines = std.mem.tokenizeScalar(u8, input, '\n');
+    var result: i64 = 0;
+
+    while (lines.next()) |line| {
+        result += solveSinglePart2(line);
+    }
+
+    return result;
 }
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
@@ -84,12 +136,19 @@ test "p1 actual" {
     try std.testing.expectEqual(17376, try p1(gpa, actual_input));
 }
 
+test "p2 single voltage" {
+    try std.testing.expectEqual(987654321111, solveSinglePart2("987654321111111"));
+    try std.testing.expectEqual(811111111119, solveSinglePart2("811111111111119"));
+    try std.testing.expectEqual(434234234278, solveSinglePart2("234234234234278"));
+    try std.testing.expectEqual(888911112111, solveSinglePart2("818181911112111"));
+}
+
 test "p2 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, sample_input));
+    try std.testing.expectEqual(3121910778619, try p2(gpa, sample_input));
 }
 
 test "p2 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, actual_input));
+    try std.testing.expectEqual(172119830406258, try p2(gpa, actual_input));
 }
