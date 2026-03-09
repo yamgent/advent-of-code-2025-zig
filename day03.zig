@@ -3,6 +3,10 @@ const std = @import("std");
 
 const actual_input = @embedFile("./actual_inputs/2025/03/input.txt");
 
+fn toDigit(c: u8) u8 {
+    return c - '0';
+}
+
 fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
     _ = allocator;
 
@@ -14,7 +18,7 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
         std.debug.assert(line.len <= buffer_size);
 
         var all_max: [buffer_size]u8 = undefined;
-        all_max[line.len - 1] = line[line.len - 1] - '0';
+        all_max[line.len - 1] = toDigit(line[line.len - 1]);
 
         var i = line.len - 2;
         // we cannot use `while (i >= 0) : (i -= 1)` because
@@ -23,7 +27,7 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
         // (in fact, the equivalent C++ version `for (unsigned int i = line.len - 2; i >= 0; i--) { .. }`
         // will also face the same issue, the loop never terminates because it will underflow and wrap)
         while (true) {
-            all_max[i] = @max(all_max[i + 1], line[i] - '0');
+            all_max[i] = @max(all_max[i + 1], toDigit(line[i]));
 
             if (i > 0) {
                 i -= 1;
@@ -35,7 +39,7 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
         var max_joltage_candidate: i64 = 0;
         i = 0;
         while (i < line.len - 1) : (i += 1) {
-            const value = (line[i] - '0') * 10 + all_max[i + 1];
+            const value = toDigit(line[i]) * 10 + all_max[i + 1];
             max_joltage_candidate = @max(max_joltage_candidate, value);
         }
 
@@ -53,7 +57,7 @@ fn solveSinglePart2(line: []const u8) i64 {
     var digits_reversed = [_]i64{0} ** buffer_size;
 
     for (0..line.len) |i| {
-        digits_reversed[i] = line[line.len - 1 - i] - '0';
+        digits_reversed[i] = toDigit(line[line.len - 1 - i]);
     }
 
     var current_max_so_far = [_]i64{0} ** buffer_size;
