@@ -85,9 +85,7 @@ fn solveSinglePart2(line: []const u8) i64 {
             next_max_so_far[i - s + 1] = @max(candidate, next_max_so_far[i - s]);
         }
 
-        const temp = next_max_so_far;
-        next_max_so_far = current_max_so_far;
-        current_max_so_far = temp;
+        std.mem.swap([buffer_size]i64, &current_max_so_far, &next_max_so_far);
     }
 
     const answer = current_max_so_far[digits_reversed.len - total_size];
