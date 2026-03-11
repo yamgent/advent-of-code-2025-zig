@@ -10,7 +10,9 @@ const Point = struct {
 
 const PointSet = std.AutoHashMap(Point, void);
 
-fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []const u8) !i64 {
+const SolveMode = enum { single_pass, iterative };
+
+fn solve(comptime mode: SolveMode, allocator: std.mem.Allocator, input: []const u8) !i64 {
     var rolls = PointSet.init(allocator);
     defer rolls.deinit();
 
@@ -29,8 +31,8 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
 
     var count: i64 = 0;
 
-    var current_rolls_to_remove = PointSet.init(allocator);
-    defer current_rolls_to_remove.deinit();
+    var to_remove = PointSet.init(allocator);
+    defer to_remove.deinit();
 
     while (true) {
         var rolls_iterator = rolls.iterator();
@@ -73,34 +75,34 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
             }
 
             if (total_neighbours < 4) {
-                try current_rolls_to_remove.put(point, {});
+                try to_remove.put(point, {});
             }
         }
 
-        const removed = current_rolls_to_remove.count();
-        count += removed;
+        const remove_count = to_remove.count();
+        count += remove_count;
 
-        if (one_time_only or removed == 0) {
+        if (mode == .single_pass or remove_count == 0) {
             break;
         }
 
-        var remove_iterator = current_rolls_to_remove.iterator();
+        var remove_iterator = to_remove.iterator();
         while (remove_iterator.next()) |remove_entry| {
             _ = rolls.remove(remove_entry.key_ptr.*);
         }
 
-        current_rolls_to_remove.clearRetainingCapacity();
+        to_remove.clearRetainingCapacity();
     }
 
     return count;
 }
 
 fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    return try solve(true, allocator, input);
+    return solve(.single_pass, allocator, input);
 }
 
 fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    return try solve(false, allocator, input);
+    return solve(.iterative, allocator, input);
 }
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
