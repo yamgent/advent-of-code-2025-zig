@@ -8,8 +8,10 @@ const Point = struct {
     y: i32,
 };
 
+const PointSet = std.AutoHashMap(Point, void);
+
 fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []const u8) !i64 {
-    var rolls = std.AutoHashMap(Point, void).init(allocator);
+    var rolls = PointSet.init(allocator);
     defer rolls.deinit();
 
     var lines = std.mem.tokenizeScalar(u8, input, '\n');
@@ -27,7 +29,7 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
 
     var count: i64 = 0;
 
-    var current_rolls_to_remove = std.AutoHashMap(Point, void).init(allocator);
+    var current_rolls_to_remove = PointSet.init(allocator);
     defer current_rolls_to_remove.deinit();
 
     while (true) {
