@@ -18,7 +18,7 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
     var y: i32 = 0;
 
     while (lines.next()) |line| {
-        for (line, 0..line.len) |ch, x| {
+        for (line, 0..) |ch, x| {
             if (ch == '@') {
                 try rolls.put(Point{ .x = @intCast(x), .y = @intCast(y) }, {});
             }
