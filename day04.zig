@@ -37,29 +37,36 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
         while (rolls_iterator.next()) |entry| {
             const point = entry.key_ptr.*;
 
-            const neighbours = [_]Point{ Point{
-                .x = point.x - 1,
-                .y = point.y - 1,
+            const offsets = [_]Point{ Point{
+                .x = -1,
+                .y = -1,
             }, Point{
-                .x = point.x,
-                .y = point.y - 1,
+                .x = 0,
+                .y = -1,
             }, Point{
-                .x = point.x + 1,
-                .y = point.y - 1,
-            }, Point{ .x = point.x - 1, .y = point.y }, Point{ .x = point.x + 1, .y = point.y }, Point{
-                .x = point.x - 1,
-                .y = point.y + 1,
+                .x = 1,
+                .y = -1,
             }, Point{
-                .x = point.x,
-                .y = point.y + 1,
+                .x = -1,
+                .y = 0,
             }, Point{
-                .x = point.x + 1,
-                .y = point.y + 1,
+                .x = 1,
+                .y = 0,
+            }, Point{
+                .x = -1,
+                .y = 1,
+            }, Point{
+                .x = 0,
+                .y = 1,
+            }, Point{
+                .x = 1,
+                .y = 1,
             } };
 
             var total_neighbours: i64 = 0;
 
-            for (neighbours) |neighbour| {
+            for (offsets) |offset| {
+                const neighbour = Point{ .x = point.x + offset.x, .y = point.y + offset.y };
                 if (rolls.contains(neighbour)) {
                     total_neighbours += 1;
                 }
