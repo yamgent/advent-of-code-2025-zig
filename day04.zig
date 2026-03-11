@@ -8,7 +8,7 @@ const Point = struct {
     y: i32,
 };
 
-fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
+fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []const u8) !i64 {
     var rolls = std.AutoHashMap(Point, void).init(allocator);
     defer rolls.deinit();
 
@@ -27,54 +27,78 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
 
     var count: i64 = 0;
 
-    var rolls_iterator = rolls.iterator();
-    while (rolls_iterator.next()) |entry| {
-        const neighbours = [_]Point{ Point{
-            .x = entry.key_ptr.x - 1,
-            .y = entry.key_ptr.y - 1,
-        }, Point{
-            .x = entry.key_ptr.x,
-            .y = entry.key_ptr.y - 1,
-        }, Point{
-            .x = entry.key_ptr.x + 1,
-            .y = entry.key_ptr.y - 1,
-        }, Point{
-            .x = entry.key_ptr.x - 1,
-            .y = entry.key_ptr.y,
-        }, Point{
-            .x = entry.key_ptr.x + 1,
-            .y = entry.key_ptr.y,
-        }, Point{
-            .x = entry.key_ptr.x - 1,
-            .y = entry.key_ptr.y + 1,
-        }, Point{
-            .x = entry.key_ptr.x,
-            .y = entry.key_ptr.y + 1,
-        }, Point{
-            .x = entry.key_ptr.x + 1,
-            .y = entry.key_ptr.y + 1,
-        } };
+    var current_rolls_to_remove = std.AutoHashMap(Point, void).init(allocator);
+    defer current_rolls_to_remove.deinit();
 
-        var total_neighbours: i64 = 0;
+    while (true) {
+        var rolls_iterator = rolls.iterator();
+        while (rolls_iterator.next()) |entry| {
+            const neighbours = [_]Point{ Point{
+                .x = entry.key_ptr.x - 1,
+                .y = entry.key_ptr.y - 1,
+            }, Point{
+                .x = entry.key_ptr.x,
+                .y = entry.key_ptr.y - 1,
+            }, Point{
+                .x = entry.key_ptr.x + 1,
+                .y = entry.key_ptr.y - 1,
+            }, Point{
+                .x = entry.key_ptr.x - 1,
+                .y = entry.key_ptr.y,
+            }, Point{
+                .x = entry.key_ptr.x + 1,
+                .y = entry.key_ptr.y,
+            }, Point{
+                .x = entry.key_ptr.x - 1,
+                .y = entry.key_ptr.y + 1,
+            }, Point{
+                .x = entry.key_ptr.x,
+                .y = entry.key_ptr.y + 1,
+            }, Point{
+                .x = entry.key_ptr.x + 1,
+                .y = entry.key_ptr.y + 1,
+            } };
 
-        for (neighbours) |neighbour| {
-            if (rolls.contains(neighbour)) {
-                total_neighbours += 1;
+            var total_neighbours: i64 = 0;
+
+            for (neighbours) |neighbour| {
+                if (rolls.contains(neighbour)) {
+                    total_neighbours += 1;
+                }
+            }
+
+            if (total_neighbours < 4) {
+                try current_rolls_to_remove.put(entry.key_ptr.*, {});
             }
         }
 
-        if (total_neighbours < 4) {
-            count += 1;
+        count += current_rolls_to_remove.count();
+
+        if (one_time_only) {
+            break;
         }
+
+        if (current_rolls_to_remove.count() == 0) {
+            break;
+        }
+
+        var remove_iterator = current_rolls_to_remove.iterator();
+        while (remove_iterator.next()) |remove_entry| {
+            _ = rolls.remove(remove_entry.key_ptr.*);
+        }
+
+        current_rolls_to_remove.clearAndFree();
     }
 
     return count;
 }
 
+fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
+    return try solve(true, allocator, input);
+}
+
 fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    _ = allocator;
-    _ = input;
-    return 2;
+    return try solve(false, allocator, input);
 }
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
@@ -123,10 +147,10 @@ test "p1 actual" {
 
 test "p2 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, sample_input));
+    try std.testing.expectEqual(43, try p2(gpa, sample_input));
 }
 
 test "p2 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, actual_input));
+    try std.testing.expectEqual(8910, try p2(gpa, actual_input));
 }
