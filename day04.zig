@@ -35,30 +35,26 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
     while (true) {
         var rolls_iterator = rolls.iterator();
         while (rolls_iterator.next()) |entry| {
+            const point = entry.key_ptr.*;
+
             const neighbours = [_]Point{ Point{
-                .x = entry.key_ptr.x - 1,
-                .y = entry.key_ptr.y - 1,
+                .x = point.x - 1,
+                .y = point.y - 1,
             }, Point{
-                .x = entry.key_ptr.x,
-                .y = entry.key_ptr.y - 1,
+                .x = point.x,
+                .y = point.y - 1,
             }, Point{
-                .x = entry.key_ptr.x + 1,
-                .y = entry.key_ptr.y - 1,
+                .x = point.x + 1,
+                .y = point.y - 1,
+            }, Point{ .x = point.x - 1, .y = point.y }, Point{ .x = point.x + 1, .y = point.y }, Point{
+                .x = point.x - 1,
+                .y = point.y + 1,
             }, Point{
-                .x = entry.key_ptr.x - 1,
-                .y = entry.key_ptr.y,
+                .x = point.x,
+                .y = point.y + 1,
             }, Point{
-                .x = entry.key_ptr.x + 1,
-                .y = entry.key_ptr.y,
-            }, Point{
-                .x = entry.key_ptr.x - 1,
-                .y = entry.key_ptr.y + 1,
-            }, Point{
-                .x = entry.key_ptr.x,
-                .y = entry.key_ptr.y + 1,
-            }, Point{
-                .x = entry.key_ptr.x + 1,
-                .y = entry.key_ptr.y + 1,
+                .x = point.x + 1,
+                .y = point.y + 1,
             } };
 
             var total_neighbours: i64 = 0;
@@ -70,7 +66,7 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
             }
 
             if (total_neighbours < 4) {
-                try current_rolls_to_remove.put(entry.key_ptr.*, {});
+                try current_rolls_to_remove.put(point, {});
             }
         }
 
