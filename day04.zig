@@ -89,7 +89,7 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
             _ = rolls.remove(remove_entry.key_ptr.*);
         }
 
-        current_rolls_to_remove.clearAndFree();
+        current_rolls_to_remove.clearRetainingCapacity();
     }
 
     return count;
