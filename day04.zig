@@ -72,11 +72,7 @@ fn solve(comptime one_time_only: bool, allocator: std.mem.Allocator, input: []co
 
         count += current_rolls_to_remove.count();
 
-        if (one_time_only) {
-            break;
-        }
-
-        if (current_rolls_to_remove.count() == 0) {
+        if (one_time_only or current_rolls_to_remove.count() == 0) {
             break;
         }
 
