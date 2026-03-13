@@ -5,34 +5,37 @@ const actual_input = @embedFile("./actual_inputs/2025/05/input.txt");
 
 const Range = struct { min: i64, max: i64 };
 
-fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    var parts = std.mem.tokenizeSequence(u8, input, "\n\n");
+fn parseRanges(allocator: std.mem.Allocator, range_part: []const u8) !std.ArrayList(Range) {
+    var lines = std.mem.tokenizeScalar(u8, range_part, '\n');
+    var result = std.ArrayList(Range).empty;
 
-    const part_ranges = parts.next().?;
-    var lines_ranges = std.mem.tokenizeScalar(u8, part_ranges, '\n');
-    var ranges = std.ArrayList(Range).empty;
-    defer ranges.deinit(allocator);
-    while (lines_ranges.next()) |line| {
-        var range_parts = std.mem.tokenizeScalar(u8, line, '-');
-        const min = try std.fmt.parseInt(i64, range_parts.next().?, 10);
-        const max = try std.fmt.parseInt(i64, range_parts.next().?, 10);
-        try ranges.append(allocator, Range{
+    while (lines.next()) |line| {
+        var components = std.mem.tokenizeScalar(u8, line, '-');
+        const min = try std.fmt.parseInt(i64, components.next().?, 10);
+        const max = try std.fmt.parseInt(i64, components.next().?, 10);
+        try result.append(allocator, Range{
             .min = min,
             .max = max,
         });
     }
 
-    const part_ingredients = parts.next().?;
-    var lines_ingredients = std.mem.tokenizeScalar(u8, part_ingredients, '\n');
-    var ingredients = std.ArrayList(i64).empty;
-    defer ingredients.deinit(allocator);
-    while (lines_ingredients.next()) |line| {
-        try ingredients.append(allocator, try std.fmt.parseInt(i64, line, 10));
-    }
+    return result;
+}
+
+fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
+    var parts = std.mem.tokenizeSequence(u8, input, "\n\n");
+
+    const range_part = parts.next().?;
+    var ranges = try parseRanges(allocator, range_part);
+    defer ranges.deinit(allocator);
+
+    const ingredients_part = parts.next().?;
+    var ingredients_lines = std.mem.tokenizeScalar(u8, ingredients_part, '\n');
 
     var count: i64 = 0;
+    while (ingredients_lines.next()) |line| {
+        const ingredient = try std.fmt.parseInt(i64, line, 10);
 
-    for (ingredients.items) |ingredient| {
         for (ranges.items) |range| {
             if (ingredient >= range.min and ingredient <= range.max) {
                 count += 1;
