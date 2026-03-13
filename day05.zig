@@ -5,6 +5,13 @@ const actual_input = @embedFile("./actual_inputs/2025/05/input.txt");
 
 const Range = struct { min: i64, max: i64 };
 
+fn lessThanRange(_: void, a: Range, b: Range) bool {
+    if (a.min == b.min) {
+        return a.max < b.max;
+    }
+    return a.min < b.min;
+}
+
 fn parseRanges(allocator: std.mem.Allocator, range_part: []const u8) !std.ArrayList(Range) {
     var lines = std.mem.tokenizeScalar(u8, range_part, '\n');
     var result = std.ArrayList(Range).empty;
@@ -48,9 +55,33 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
 }
 
 fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    _ = allocator;
-    _ = input;
-    return 2;
+    var parts = std.mem.tokenizeSequence(u8, input, "\n\n");
+
+    const range_part = parts.next().?;
+    var ranges = try parseRanges(allocator, range_part);
+    defer ranges.deinit(allocator);
+
+    std.mem.sort(Range, ranges.items, {}, lessThanRange);
+
+    var count: i64 = 0;
+    var previous: i64 = -1;
+
+    for (ranges.items) |range| {
+        if (range.max <= previous) {
+            // ignore this range, previous range already encompass this inner range
+            continue;
+        }
+
+        if (range.min <= previous) {
+            count += range.max - previous;
+        } else {
+            count += range.max - range.min + 1;
+        }
+
+        previous = range.max;
+    }
+
+    return count;
 }
 
 var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
@@ -100,10 +131,10 @@ test "p1 actual" {
 
 test "p2 sample" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, sample_input));
+    try std.testing.expectEqual(14, try p2(gpa, sample_input));
 }
 
 test "p2 actual" {
     const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, actual_input));
+    try std.testing.expectEqual(332998283036769, try p2(gpa, actual_input));
 }
