@@ -3,14 +3,20 @@ const std = @import("std");
 
 const actual_input = @embedFile("./actual_inputs/2025/05/input.txt");
 
-const Range = struct { min: i64, max: i64 };
+const Range = struct {
+    min: i64,
+    max: i64,
 
-fn lessThanRange(_: void, a: Range, b: Range) bool {
-    if (a.min == b.min) {
-        return a.max < b.max;
+    const Self = @This();
+
+    fn contains(self: Self, value: i64) bool {
+        return value >= self.min and value <= self.max;
     }
-    return a.min < b.min;
-}
+
+    fn lessThan(_: void, a: Range, b: Range) bool {
+        return if (a.min == b.min) a.max < b.max else a.min < b.min;
+    }
+};
 
 fn parseRanges(allocator: std.mem.Allocator, range_part: []const u8) !std.ArrayList(Range) {
     var lines = std.mem.tokenizeScalar(u8, range_part, '\n');
@@ -18,8 +24,12 @@ fn parseRanges(allocator: std.mem.Allocator, range_part: []const u8) !std.ArrayL
 
     while (lines.next()) |line| {
         var components = std.mem.tokenizeScalar(u8, line, '-');
-        const min = try std.fmt.parseInt(i64, components.next().?, 10);
-        const max = try std.fmt.parseInt(i64, components.next().?, 10);
+        const min_str = components.next() orelse return error.InvalidInput;
+        const max_str = components.next() orelse return error.InvalidInput;
+
+        const min = try std.fmt.parseInt(i64, min_str, 10);
+        const max = try std.fmt.parseInt(i64, max_str, 10);
+
         try result.append(allocator, Range{
             .min = min,
             .max = max,
@@ -32,11 +42,11 @@ fn parseRanges(allocator: std.mem.Allocator, range_part: []const u8) !std.ArrayL
 fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
     var parts = std.mem.tokenizeSequence(u8, input, "\n\n");
 
-    const range_part = parts.next().?;
+    const range_part = parts.next() orelse return error.InvalidInput;
     var ranges = try parseRanges(allocator, range_part);
     defer ranges.deinit(allocator);
 
-    const ingredients_part = parts.next().?;
+    const ingredients_part = parts.next() orelse return error.InvalidInput;
     var ingredients_lines = std.mem.tokenizeScalar(u8, ingredients_part, '\n');
 
     var count: i64 = 0;
@@ -44,7 +54,7 @@ fn p1(allocator: std.mem.Allocator, input: []const u8) !i64 {
         const ingredient = try std.fmt.parseInt(i64, line, 10);
 
         for (ranges.items) |range| {
-            if (ingredient >= range.min and ingredient <= range.max) {
+            if (range.contains(ingredient)) {
                 count += 1;
                 break;
             }
@@ -61,19 +71,23 @@ fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
     var ranges = try parseRanges(allocator, range_part);
     defer ranges.deinit(allocator);
 
-    std.mem.sort(Range, ranges.items, {}, lessThanRange);
+    std.mem.sort(Range, ranges.items, {}, Range.lessThan);
 
     var count: i64 = 0;
-    var previous: i64 = -1;
+    var previous: ?i64 = null;
 
     for (ranges.items) |range| {
-        if (range.max <= previous) {
-            // ignore this range, previous range already encompass this inner range
-            continue;
-        }
+        if (previous) |p| {
+            if (range.max <= p) {
+                // ignore this range, previous range already encompass this inner range
+                continue;
+            }
 
-        if (range.min <= previous) {
-            count += range.max - previous;
+            if (range.min <= p) {
+                count += range.max - p;
+            } else {
+                count += range.max - range.min + 1;
+            }
         } else {
             count += range.max - range.min + 1;
         }
