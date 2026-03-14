@@ -5,40 +5,62 @@ const actual_input = @embedFile("./actual_inputs/2025/06/input.txt");
 
 const Operations = enum { multiply, add };
 
-fn p1(input: []const u8) !i64 {
-    var total_columns: usize = 0;
+// actual input columns is 1000, so that should be the expected max
+const max_columns = 1000;
 
-    // actual input columns is 1000, so that should be the expected max
-    const max_columns = 1000;
-    var operations: [max_columns]Operations = undefined;
+fn countTotalColumns(input: []const u8) usize {
+    var count: usize = 0;
 
-    {
-        var lines = std.mem.tokenizeScalar(u8, input, '\n');
-        var last_line: ?[]const u8 = null;
-        while (lines.next()) |line| {
-            last_line = line;
-        }
-
-        if (last_line) |l| {
-            var op_parts = std.mem.tokenizeScalar(u8, l, ' ');
-            while (op_parts.next()) |part| {
-                var op: Operations = undefined;
-
-                if (std.mem.eql(u8, part, "+")) {
-                    op = Operations.add;
-                } else if (std.mem.eql(u8, part, "*")) {
-                    op = Operations.multiply;
-                } else {
-                    return error.InvalidOp;
-                }
-
-                operations[total_columns] = op;
-                total_columns += 1;
-            }
-        } else {
-            return error.InvalidInput;
+    var lines = std.mem.tokenizeScalar(u8, input, '\n');
+    if (lines.next()) |line| {
+        var parts = std.mem.tokenizeScalar(u8, line, ' ');
+        while (parts.next()) |_| {
+            count += 1;
         }
     }
+
+    return count;
+}
+
+fn parseOperations(input: []const u8) ![max_columns]Operations {
+    var operations: [max_columns]Operations = undefined;
+
+    var lines = std.mem.tokenizeScalar(u8, input, '\n');
+    var last_line: ?[]const u8 = null;
+    while (lines.next()) |line| {
+        last_line = line;
+    }
+
+    if (last_line) |l| {
+        var op_parts = std.mem.tokenizeScalar(u8, l, ' ');
+
+        var i: usize = 0;
+        while (op_parts.next()) |part| {
+            var op: Operations = undefined;
+
+            if (std.mem.eql(u8, part, "+")) {
+                op = Operations.add;
+            } else if (std.mem.eql(u8, part, "*")) {
+                op = Operations.multiply;
+            } else {
+                return error.InvalidOp;
+            }
+
+            operations[i] = op;
+            i += 1;
+        }
+    } else {
+        return error.InvalidInput;
+    }
+
+    return operations;
+}
+
+fn p1(input: []const u8) !i64 {
+    const total_columns: usize = countTotalColumns(input);
+    std.debug.assert(total_columns <= max_columns);
+
+    const operations: [max_columns]Operations = try parseOperations(input);
 
     var values: [max_columns]i64 = [_]i64{0} ** max_columns;
 
