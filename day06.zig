@@ -4,118 +4,81 @@ const actual_input = @embedFile("./actual_inputs/2025/06/input.txt");
 
 const Operation = enum { multiply, add };
 
-const OperationList = struct {
-    ops: [max_columns]Operation,
-    len: usize,
-};
-
-const InputLines = struct {
-    lines: [max_lines][]const u8,
-    len: usize,
-};
-
 // actual input columns is 1000, so that should be the expected max
-const max_columns = 1000;
+const max_columns: usize = 1000;
 // actual input has 5 lines, so that should be the expected max
-const max_lines = 5;
+const max_lines: usize = 5;
 
 const ParseError = error{
     InvalidOp,
     InvalidInput,
     TooManyColumns,
-};
-
-const SplitLinesError = error{
     TooManyLines,
 };
 
-fn splitLines(input: []const u8) SplitLinesError!InputLines {
-    var lines: [max_lines][]const u8 = undefined;
-    var total_lines: usize = 0;
-
-    {
-        var lines_split = std.mem.tokenizeScalar(u8, input, '\n');
-        while (lines_split.next()) |line| {
-            if (total_lines >= max_lines) {
-                return error.TooManyLines;
-            }
-
-            lines[total_lines] = line;
-            total_lines += 1;
-        }
-    }
-
-    return .{
-        .lines = lines,
-        .len = total_lines,
-    };
-}
-
-fn parseOperations(input: InputLines) ParseError!OperationList {
-    var operations: [max_columns]Operation = undefined;
+fn splitLines(input: []const u8, buf: *[max_lines][]const u8) ParseError![]const []const u8 {
     var count: usize = 0;
 
-    if (input.len == 0) {
-        return error.InvalidInput;
-    }
+    var it = std.mem.tokenizeScalar(u8, input, '\n');
 
-    const last_line = input.lines[input.len - 1];
+    while (it.next()) |line| {
+        if (count >= buf.len) return error.TooManyLines;
 
-    var op_parts = std.mem.tokenizeScalar(u8, last_line, ' ');
-
-    while (op_parts.next()) |part| {
-        if (count >= max_columns) {
-            return error.TooManyColumns;
-        }
-
-        const op: Operation = switch (part[0]) {
-            '+' => .add,
-            '*' => .multiply,
-            else => {
-                return error.InvalidOp;
-            },
-        };
-
-        operations[count] = op;
+        buf[count] = line;
         count += 1;
     }
 
-    return .{
-        .ops = operations,
-        .len = count,
-    };
+    if (count == 0) return error.InvalidInput;
+
+    return buf[0..count];
+}
+
+fn parseOperations(line: []const u8, buf: *[max_columns]Operation) ParseError![]Operation {
+    var count: usize = 0;
+
+    var it = std.mem.tokenizeScalar(u8, line, ' ');
+
+    while (it.next()) |part| {
+        if (part.len != 1) return error.InvalidOp;
+        if (count >= buf.len) return error.TooManyColumns;
+
+        buf[count] = switch (part[0]) {
+            '+' => .add,
+            '*' => .multiply,
+            else => return error.InvalidOp,
+        };
+
+        count += 1;
+    }
+
+    return buf[0..count];
 }
 
 fn p1(input: []const u8) !i64 {
-    const input_lines = try splitLines(input);
-    const operations = try parseOperations(input_lines);
+    var line_buf: [max_lines][]const u8 = undefined;
+    const lines = try splitLines(input, &line_buf);
+
+    var op_buf: [max_columns]Operation = undefined;
+    const operations = try parseOperations(lines[lines.len - 1], &op_buf);
 
     var values = std.mem.zeroes([max_columns]i64);
 
-    for (0..operations.len) |i| {
-        if (operations.ops[i] == .multiply) {
-            values[i] = 1;
-        }
+    for (operations, 0..) |op, i| {
+        if (op == .multiply) values[i] = 1;
     }
 
-    for (input_lines.lines, 0..) |line, line_row| {
-        if (line_row == input_lines.len - 1) {
-            // it is the last line, no more values to process
-            break;
-        }
-        var parts = std.mem.tokenizeScalar(u8, line, ' ');
+    for (lines[0..(lines.len - 1)]) |line| {
+        var it = std.mem.tokenizeScalar(u8, line, ' ');
 
         var i: usize = 0;
-        while (parts.next()) |part| {
+        while (it.next()) |part| {
+            if (i >= operations.len) return error.InvalidInput;
+
             const value = try std.fmt.parseInt(i64, part, 10);
 
-            switch (operations.ops[i]) {
-                .add => {
-                    values[i] += value;
-                },
-                .multiply => {
-                    values[i] *= value;
-                },
+            switch (operations[i]) {
+                .add => values[i] += value,
+                .multiply => values[i] *= value,
             }
 
             i += 1;
@@ -123,7 +86,7 @@ fn p1(input: []const u8) !i64 {
     }
 
     var result: i64 = 0;
-    for (values) |value| {
+    for (values[0..operations.len]) |value| {
         result += value;
     }
 
@@ -131,24 +94,26 @@ fn p1(input: []const u8) !i64 {
 }
 
 fn p2(input: []const u8) !i64 {
-    const input_lines = try splitLines(input);
-    const operations = try parseOperations(input_lines);
+    var line_buf: [max_lines][]const u8 = undefined;
+    const lines = try splitLines(input, &line_buf);
+
+    var op_buf: [max_columns]Operation = undefined;
+    const operations = try parseOperations(lines[lines.len - 1], &op_buf);
 
     var values = std.mem.zeroes([max_columns]i64);
 
-    for (0..operations.len) |i| {
-        if (operations.ops[i] == .multiply) {
-            values[i] = 1;
-        }
+    for (operations, 0..) |op, i| {
+        if (op == .multiply) values[i] = 1;
     }
 
     var column_to_calculate: usize = operations.len - 1;
-    var current_cell_col: usize = input_lines.lines[0].len - 1;
+    var current_cell_col: usize = lines[0].len - 1;
 
     while (true) {
         var all_cells_empty = true;
-        for (0..(input_lines.len - 1)) |y| {
-            if (input_lines.lines[y][current_cell_col] != ' ') {
+
+        for (lines[0..(lines.len - 1)]) |line| {
+            if (line[current_cell_col] != ' ') {
                 all_cells_empty = false;
                 break;
             }
@@ -159,26 +124,22 @@ fn p2(input: []const u8) !i64 {
         } else {
             var cell_column_value: i64 = 0;
 
-            for (0..(input_lines.len - 1)) |y| {
-                if (input_lines.lines[y][current_cell_col] != ' ') {
+            for (lines[0..(lines.len - 1)]) |line| {
+                const c = line[current_cell_col];
+                if (c != ' ') {
                     cell_column_value *= 10;
-                    cell_column_value += input_lines.lines[y][current_cell_col] - '0';
+                    cell_column_value += @as(i64, c - '0');
                 }
             }
 
-            switch (operations.ops[column_to_calculate]) {
-                .add => {
-                    values[column_to_calculate] += cell_column_value;
-                },
-                .multiply => {
-                    values[column_to_calculate] *= cell_column_value;
-                },
+            switch (operations[column_to_calculate]) {
+                .add => values[column_to_calculate] += cell_column_value,
+                .multiply => values[column_to_calculate] *= cell_column_value,
             }
         }
 
-        if (current_cell_col == 0) {
-            break;
-        }
+        if (current_cell_col == 0) break;
+
         current_cell_col -= 1;
     }
 
