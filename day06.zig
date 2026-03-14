@@ -7,6 +7,8 @@ const Operations = enum { multiply, add };
 
 // actual input columns is 1000, so that should be the expected max
 const max_columns = 1000;
+// actual input has 5 lines, so that should be the expected max
+const max_lines = 5;
 
 fn countTotalColumns(input: []const u8) usize {
     var count: usize = 0;
@@ -104,31 +106,82 @@ fn p1(input: []const u8) !i64 {
     return result;
 }
 
-fn p2(allocator: std.mem.Allocator, input: []const u8) !i64 {
-    _ = allocator;
-    _ = input;
-    return 2;
+fn p2(input: []const u8) !i64 {
+    const total_columns: usize = countTotalColumns(input);
+    std.debug.assert(total_columns <= max_columns);
+
+    const operations: [max_columns]Operations = try parseOperations(input);
+
+    var values: [max_columns]i64 = [_]i64{0} ** max_columns;
+
+    for (0..total_columns) |i| {
+        if (operations[i] == .multiply) {
+            values[i] = 1;
+        }
+    }
+
+    var grid: [max_lines][]const u8 = undefined;
+    var total_lines: usize = 0;
+
+    {
+        var lines = std.mem.tokenizeScalar(u8, input, '\n');
+        while (lines.next()) |line| {
+            grid[total_lines] = line;
+            total_lines += 1;
+        }
+    }
+
+    var column_to_calculate: usize = total_columns - 1;
+    var current_cell_col: usize = grid[0].len - 1;
+
+    while (true) {
+        var all_cells_empty = true;
+        for (0..(total_lines - 1)) |y| {
+            if (grid[y][current_cell_col] != ' ') {
+                all_cells_empty = false;
+                break;
+            }
+        }
+
+        if (all_cells_empty) {
+            column_to_calculate -= 1;
+        } else {
+            var cell_column_value: i64 = 0;
+
+            for (0..(total_lines - 1)) |y| {
+                if (grid[y][current_cell_col] != ' ') {
+                    cell_column_value *= 10;
+                    cell_column_value += grid[y][current_cell_col] - '0';
+                }
+            }
+
+            switch (operations[column_to_calculate]) {
+                .add => {
+                    values[column_to_calculate] += cell_column_value;
+                },
+                .multiply => {
+                    values[column_to_calculate] *= cell_column_value;
+                },
+            }
+        }
+
+        if (current_cell_col == 0) {
+            break;
+        }
+        current_cell_col -= 1;
+    }
+
+    var result: i64 = 0;
+    for (values) |value| {
+        result += value;
+    }
+
+    return result;
 }
 
-var debug_allocator: std.heap.DebugAllocator(.{}) = .init;
-
 pub fn main() !void {
-    const allocator, const is_debug = gpa: {
-        if (builtin.os.tag == .wasi) break :gpa .{ std.heap.wasm_allocator, false };
-        break :gpa switch (builtin.mode) {
-            .Debug, .ReleaseSafe => .{ debug_allocator.allocator(), true },
-            .ReleaseFast, .ReleaseSmall => .{ std.heap.smp_allocator, false },
-        };
-    };
-    defer if (is_debug) {
-        const deinit_status = debug_allocator.deinit();
-        if (deinit_status == .leak) {
-            @panic("Memory leak");
-        }
-    };
-
     std.debug.print("{d}\n", .{try p1(actual_input)});
-    std.debug.print("{d}\n", .{try p2(allocator, actual_input)});
+    std.debug.print("{d}\n", .{try p2(actual_input)});
 }
 
 const sample_input =
@@ -147,11 +200,9 @@ test "p1 actual" {
 }
 
 test "p2 sample" {
-    const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, sample_input));
+    try std.testing.expectEqual(3263827, try p2(sample_input));
 }
 
 test "p2 actual" {
-    const gpa = std.testing.allocator;
-    try std.testing.expectEqual(2, try p2(gpa, actual_input));
+    try std.testing.expectEqual(9581313737063, try p2(actual_input));
 }
